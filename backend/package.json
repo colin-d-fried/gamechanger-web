@@ -72,6 +72,9 @@
 	},
 	"jest": {
 		"testEnvironment": "node",
+		"setupFiles": [
+			"<rootDir>/test/jest.setup.js"
+		],
 		"coverageReporters": [
 			"text",
 			"cobertura",
@@ -82,6 +85,14 @@
 			"default",
 			"jest-junit"
 		],
-		"testTimeout": 10000
+		"testTimeout": 10000,
+		"coverageThreshold": {
+			"global": {
+				"branches": 30,
+				"functions": 40,
+				"lines": 50,
+				"statements": 50
+			}
+		}
 	}
 }
