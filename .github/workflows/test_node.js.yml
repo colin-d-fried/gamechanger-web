@@ -33,3 +33,19 @@ jobs:
             cd backend && npm install jest && npm install && npm run test
       env:
         NODE_AUTH_TOKEN: ${{secrets.NPMRC_FILE}}
+    - name: Install frontend dependencies
+      run: cd frontend && npm install
+      env:
+        NODE_AUTH_TOKEN: ${{secrets.NPMRC_FILE}}
+    - name: Install Playwright browsers
+      run: cd frontend && npx playwright install --with-deps chromium
+      continue-on-error: true
+    # The Playwright suite targets a deployed BASE_URL; in this workflow there
+    # is no running app, so this step is non-blocking and acts as a smoke check
+    # that the Playwright config + specs compile cleanly. Full E2E execution
+    # runs in the GitLab integration-testing-playwright-job.
+    - name: Run Playwright tests (non-blocking)
+      run: cd frontend && npx playwright test --list
+      env:
+        NODE_AUTH_TOKEN: ${{secrets.NPMRC_FILE}}
+      continue-on-error: true

@@ -85,6 +85,7 @@
 		"xlsx": "0.18.5"
 	},
 	"devDependencies": {
+		"@playwright/test": "^1.48.0",
 		"@testing-library/cypress": "^8.0.3",
 		"babel-plugin-import": "1.13.5",
 		"chai": "^4.3.4",
@@ -127,7 +128,10 @@
 		"precy:test": "rm cypress/results/* || true",
 		"cy:test": "DEBUG=cypress:server*,-cypress:server:browsers* npx cypress run --browser chrome",
 		"report:merge": "npx mochawesome-merge \"cypress/results/*.json\" > results.json",
-		"report:send": "node cypress/support/sendResults.js"
+		"report:send": "node cypress/support/sendResults.js",
+		"pw:test": "npx playwright test",
+		"pw:test:headed": "npx playwright test --headed",
+		"pw:report": "npx playwright show-report"
 	},
 	"jest": {
 		"moduleDirectories": [
