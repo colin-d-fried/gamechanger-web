@@ -1,0 +1,41 @@
+name: Gitleaks (secret scanning)
+
+on:
+  pull_request:
+    branches: [dev, main, master]
+  push:
+    branches: [dev, main, master]
+  schedule:
+    # Re-scan the default branch nightly to catch secrets committed on pushes
+    # that slipped past the PR scan (e.g. direct-push admins).
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  gitleaks:
+    name: Scan for committed secrets
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          # Gitleaks needs full history for an accurate scan.
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        # Non-blocking during the baseline observation window (≈2 weeks).
+        # Flip to `false` once the project-level allowlist in `.gitleaks.toml`
+        # has been tuned against the initial findings.
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Optional: set GITLEAKS_LICENSE for the (paid) PR-comment feature.
+          # Not used here — we rely on the job summary + SARIF upload instead.
+          GITLEAKS_ENABLE_COMMENTS: "false"
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: "true"
+          GITLEAKS_ENABLE_SUMMARY: "true"

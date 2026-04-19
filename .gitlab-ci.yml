@@ -305,3 +305,33 @@ integration-testing-cypress-job: # Start the integration testing
       - frontend/cypress/videos
   allow_failure: true # Just until we get the tests working fully. It's hit or miss on what passes and what doesn't.
 
+# ---------------------------------------------------------------------------
+# Phase 4.1 — Gitleaks secret scanning
+# ---------------------------------------------------------------------------
+# Runs Gitleaks against the full git history on every MR. The job is
+# allow_failure: true during the baseline-tuning window; flip it to required
+# once the `.gitleaks.toml` allowlist is stable.
+secret-scanning-gitleaks-job:
+  image: zricethezav/gitleaks:v8.18.4
+  stage: "🧪 security-test"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  variables:
+    # Gitleaks needs full history for accurate detection.
+    GIT_DEPTH: 0
+  script:
+    - gitleaks detect
+        --source "$CI_PROJECT_DIR"
+        --config "$CI_PROJECT_DIR/.gitleaks.toml"
+        --report-path "$CI_PROJECT_DIR/gitleaks-report.json"
+        --report-format json
+        --redact
+        --no-banner
+        --exit-code 1
+  artifacts:
+    when: always
+    expire_in: 30 days
+    paths:
+      - gitleaks-report.json
+  allow_failure: true
+

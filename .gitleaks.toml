@@ -1,0 +1,41 @@
+# Gitleaks configuration for gamechanger-web.
+#
+# Extends the default Gitleaks ruleset. Project-specific allowlists are kept
+# narrow so true positives still surface. Whenever a new path/pattern is added
+# below, include a short justification comment so a reviewer can confirm it's
+# safe.
+
+[extend]
+# Pull in the upstream ruleset (covers AWS keys, GCP, GitHub/GitLab PATs,
+# private keys, Slack tokens, Stripe, etc.).
+useDefault = true
+
+[allowlist]
+description = "Project-wide allowlist"
+
+# Paths that contain documentation or sample values that trip default rules.
+paths = [
+    # Phase 4 plan doc quotes a few sample placeholders / env-var names.
+    '''docs/security/.*\.md''',
+    # Lockfiles: not human-authored, reviewing generated hashes is low-signal.
+    '''.*yarn\.lock''',
+    '''.*package-lock\.json''',
+    # Test fixtures / mocks — any real-looking values are synthetic.
+    '''backend/test/resources/.*''',
+    '''frontend/test/.*''',
+    # Cypress fixtures
+    '''frontend/cypress/fixtures/.*''',
+]
+
+# Commits known to pre-date this scanner being wired up. Intentionally empty;
+# fill in commit SHAs here after the initial run if historical findings need
+# to be grandfathered in rather than rewritten.
+commits = []
+
+# Regexes for values that default rules flag but are actually placeholders
+# or variable-interpolation syntax (e.g. "${NPM_AUTH_TOKEN}").
+regexes = [
+    '''\$\{[A-Z_]+\}''',          # CI variable interpolation
+    '''<[A-Z_][A-Z0-9_]+>''',    # Angle-bracket placeholders in docs
+    '''EXAMPLE|PLACEHOLDER|DUMMY|TEST''',
+]
