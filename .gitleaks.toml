@@ -34,8 +34,14 @@ commits = []
 
 # Regexes for values that default rules flag but are actually placeholders
 # or variable-interpolation syntax (e.g. "${NPM_AUTH_TOKEN}").
+#
+# Keep these NARROW. A bare "TEST" or "SECRET" match would silently suppress
+# real committed secrets whose values happen to contain those substrings
+# (e.g. Stripe `sk_TEST_...` keys from staging environments).
 regexes = [
-    '''\$\{[A-Z_]+\}''',          # CI variable interpolation
-    '''<[A-Z_][A-Z0-9_]+>''',    # Angle-bracket placeholders in docs
-    '''EXAMPLE|PLACEHOLDER|DUMMY|TEST''',
+    '''\$\{[A-Z_]+\}''',                    # CI variable interpolation: ${NPM_AUTH_TOKEN}
+    '''<[A-Z_][A-Z0-9_]+>''',              # Angle-bracket placeholders in docs: <API_TOKEN>
+    '''\bEXAMPLE\b''',                      # word-bounded "EXAMPLE"
+    '''\bPLACEHOLDER\b''',                  # word-bounded "PLACEHOLDER"
+    '''\bDUMMY\b''',                        # word-bounded "DUMMY"
 ]
