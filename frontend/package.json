@@ -151,9 +151,9 @@
 			"\\.(css|less)$": "identity-obj-proxy",
 			"\\.(pdf|jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "<rootDir>/test/mock.js",
 			"^.+/telemetry/Matomo$": "<rootDir>/test/__mocks__/matomoMock.js",
-			"^@dod-advana/advana-platform-ui/.*$": "<rootDir>/test/__mocks__/advanaPlatformUiMock.js",
-			"^@dod-advana/advana-side-nav$": "<rootDir>/test/__mocks__/advanaPlatformUiMock.js",
-			"^@dod-advana/advana-tutorial-overlay$": "<rootDir>/test/__mocks__/advanaPlatformUiMock.js"
+			"^@dod-advana/advana-platform-ui(/.*)?$": "<rootDir>/test/__mocks__/advanaPlatformUiMock.js",
+			"^@dod-advana/advana-side-nav(/.*)?$": "<rootDir>/test/__mocks__/advanaPlatformUiMock.js",
+			"^@dod-advana/advana-tutorial-overlay(/.*)?$": "<rootDir>/test/__mocks__/advanaPlatformUiMock.js"
 		},
 		"coverageReporters": [
 			"text",
