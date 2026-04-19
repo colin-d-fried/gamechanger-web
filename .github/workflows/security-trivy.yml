@@ -15,6 +15,13 @@ permissions:
   contents: read
   security-events: write  # for SARIF upload to GitHub Security tab
 
+env:
+  # Pin Trivy to a stable release. Install directly rather than depend on the
+  # `aquasecurity/trivy-action` Marketplace action so we don't get bitten by
+  # action-version churn. Update in lockstep with the image tag used in
+  # `.gitlab-ci.yml` so both pipelines scan with the same engine.
+  TRIVY_VERSION: "0.55.0"
+
 jobs:
   trivy:
     name: ${{ matrix.name }}
@@ -24,41 +31,69 @@ jobs:
       matrix:
         include:
           - name: "fs-scan-frontend"
-            target: "frontend"
+            scan_type: "fs"
+            scan_ref: "frontend"
             scanners: "vuln,secret,misconfig"
+            severity: "CRITICAL,HIGH"
+            skip_dirs: ""
           - name: "fs-scan-backend"
-            target: "backend"
+            scan_type: "fs"
+            scan_ref: "backend"
             scanners: "vuln,secret,misconfig"
+            severity: "CRITICAL,HIGH"
+            skip_dirs: ""
           - name: "config-scan-chart"
-            target: "chart"
-            scanners: "misconfig"
+            scan_type: "config"
+            scan_ref: "chart"
+            scanners: ""
+            severity: "CRITICAL,HIGH,MEDIUM"
+            skip_dirs: ""
           - name: "config-scan-dockerfiles"
-            target: "."
-            scanners: "misconfig"
-            # Scope the dockerfile scan down so it doesn't re-scan the whole tree.
-            extra_args: "--skip-dirs frontend --skip-dirs backend --skip-dirs chart --skip-dirs .git --skip-dirs node_modules"
+            scan_type: "config"
+            scan_ref: "."
+            scanners: ""
+            severity: "CRITICAL,HIGH,MEDIUM"
+            # Scope the dockerfile scan to root-level config so it doesn't
+            # re-scan the frontend/backend/chart/.git trees (those are covered
+            # by the dedicated matrix entries above).
+            skip_dirs: "frontend,backend,chart,.git,node_modules"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Run Trivy
-        uses: aquasecurity/trivy-action@0.24.0
+      - name: Install Trivy ${{ env.TRIVY_VERSION }}
+        run: |
+          set -euo pipefail
+          curl -sSL \
+            "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.deb" \
+            -o /tmp/trivy.deb
+          sudo dpkg -i /tmp/trivy.deb
+          trivy --version
+
+      - name: Run Trivy (${{ matrix.name }})
         # Non-blocking during the baseline observation window.
         continue-on-error: true
-        with:
-          scan-type: ${{ matrix.target == '.' && 'fs' || (matrix.target == 'chart' && 'config' || 'fs') }}
-          scan-ref: ${{ matrix.target }}
-          scanners: ${{ matrix.scanners }}
-          severity: "CRITICAL,HIGH"
-          ignore-unfixed: true
-          exit-code: "1"
-          format: "sarif"
-          output: "trivy-${{ matrix.name }}.sarif"
-          trivyignores: ".trivyignore"
+        run: |
+          set -euo pipefail
+          args=(
+            "${{ matrix.scan_type }}"
+            --format sarif
+            --output "trivy-${{ matrix.name }}.sarif"
+            --severity "${{ matrix.severity }}"
+            --exit-code 1
+            --ignore-unfixed
+            --ignorefile .trivyignore
+          )
+          if [ -n "${{ matrix.scanners }}" ]; then
+            args+=(--scanners "${{ matrix.scanners }}")
+          fi
+          if [ -n "${{ matrix.skip_dirs }}" ]; then
+            args+=(--skip-dirs "${{ matrix.skip_dirs }}")
+          fi
+          args+=("${{ matrix.scan_ref }}")
+          trivy "${args[@]}"
 
       - name: Upload SARIF to GitHub Security tab
-        # Only upload if the scan produced a file; Trivy writes SARIF even on
-        # no-findings runs, so this should basically always execute.
         if: always() && hashFiles(format('trivy-{0}.sarif', matrix.name)) != ''
         uses: github/codeql-action/upload-sarif@v3
         with:
