@@ -117,6 +117,25 @@ unit-backend-test-job: # Job for the unit tests
         coverage_format: cobertura
         path: backend/coverage/cobertura-coverage.xml
 
+unit-frontend-test-job:
+  image: ${IRONBANK_NODEJS18}
+  stage: "🧪 static-test"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  script:
+    - cd frontend && npx jest --coverage --ci --reporters=default --reporters=jest-junit
+  artifacts:
+    paths:
+      - frontend/coverage/lcov.info
+      - frontend/junit.xml
+    when: always
+    reports:
+      junit:
+        - frontend/junit.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: frontend/coverage/cobertura-coverage.xml
+
 lint-test-job: # lint-job
   image: ${IRONBANK_NODEJS18}
   stage: "🧪 static-test"
@@ -160,7 +179,7 @@ sonar_scan-job: # Run code through sonar scanner
       sonar-scanner \
         -Dsonar.qualitygate.wait=true \
         -Dsonar.exclusions=backend/node_app/sql/* \
-        -Dsonar.javascript.lcov.reportPaths=backend/coverage/lcov.info \
+        -Dsonar.javascript.lcov.reportPaths=backend/coverage/lcov.info,frontend/coverage/lcov.info \
         -Dsonar.junit.reportPaths=backend/junit.xml \
         -Dsonar.eslint.reportPaths=backend/eslintReport.json,frontend/eslintReport.json \
         -Dsonar.language=js \

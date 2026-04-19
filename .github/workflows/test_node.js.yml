@@ -33,3 +33,7 @@ jobs:
             cd backend && npm install jest && npm install && npm run test
       env:
         NODE_AUTH_TOKEN: ${{secrets.NPMRC_FILE}}
+    - run: |
+            cd frontend && npm install jest && npm install && npx jest --ci
+      env:
+        NODE_AUTH_TOKEN: ${{secrets.NPMRC_FILE}}
