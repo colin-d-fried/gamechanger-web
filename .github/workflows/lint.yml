@@ -13,8 +13,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - run: cd frontend
-    - run: cp frontend/package-lock.json package-lock.json
     - name: Use Node.js '18'
       uses: actions/setup-node@v2
       with:
@@ -32,8 +30,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - run: cd backend
-      - run: cp backend/package-lock.json package-lock.json
       - name: Use Node.js '18'
         uses: actions/setup-node@v2
         with:
