@@ -64,10 +64,10 @@ jobs:
       - name: Install Trivy ${{ env.TRIVY_VERSION }}
         run: |
           set -euo pipefail
-          curl -sSL \
-            "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.deb" \
-            -o /tmp/trivy.deb
-          sudo dpkg -i /tmp/trivy.deb
+          # Use the official install script — robust against asset-name/version
+          # churn in the GitHub release artifacts.
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
+            | sudo sh -s -- -b /usr/local/bin "v${TRIVY_VERSION}"
           trivy --version
 
       - name: Run Trivy (${{ matrix.name }})
