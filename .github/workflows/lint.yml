@@ -13,8 +13,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - run: cd frontend
-    - run: cp frontend/package-lock.json package-lock.json
+    # See note in test_node.js.yml: there is no frontend/package-lock.json
+    # in this repo (yarn.lock is used); removed the cp step that always
+    # failed and short-circuited this job.
     - name: Use Node.js '18'
       uses: actions/setup-node@v2
       with:
@@ -32,8 +33,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - run: cd backend
-      - run: cp backend/package-lock.json package-lock.json
+      # See note in test_node.js.yml: there is no backend/package-lock.json
+      # in this repo (yarn.lock is used); removed the cp step that always
+      # failed and short-circuited this job.
       - name: Use Node.js '18'
         uses: actions/setup-node@v2
         with:

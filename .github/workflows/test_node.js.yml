@@ -21,8 +21,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - run: cd backend
-    - run: cp backend/package-lock.json package-lock.json
+    # The repo uses yarn.lock, not package-lock.json, so the historic
+    # `cp backend/package-lock.json package-lock.json` step was always
+    # exiting 1 and silently short-circuiting this job. Removed.
     - name: Use Node.js '18'
       uses: actions/setup-node@v2
       with:
