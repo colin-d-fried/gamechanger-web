@@ -1,0 +1,12 @@
+# Trivy findings to ignore.
+#
+# Format: one CVE per line (e.g. `CVE-2023-12345`) or a misconfig rule ID
+# (e.g. `AVD-DS-0002`). Each entry MUST carry a dated justification comment
+# explaining why it's accepted. Remove entries once the underlying issue is
+# remediated (e.g. a dep upgrade lands).
+#
+# Starting empty on purpose — the first Trivy run will populate the initial
+# triage list. Any additions here should link to:
+#   - an upstream advisory URL
+#   - a short note on impact assessment
+#   - an expected remediation date or a "won't-fix" rationale

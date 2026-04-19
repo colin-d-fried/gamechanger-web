@@ -305,3 +305,61 @@ integration-testing-cypress-job: # Start the integration testing
       - frontend/cypress/videos
   allow_failure: true # Just until we get the tests working fully. It's hit or miss on what passes and what doesn't.
 
+
+# ---------------------------------------------------------------------------
+# Phase 4.2 — Trivy (SCA + IaC + container config)
+# ---------------------------------------------------------------------------
+# One parallel matrix job per scan surface:
+#   - fs frontend (deps, secrets, misconfig)
+#   - fs backend  (deps, secrets, misconfig)
+#   - config chart/ (Helm)
+# CRITICAL/HIGH only while tuning the ignore list.
+.trivy-base:
+  image:
+    name: aquasec/trivy:0.55.0
+    entrypoint: [""]
+  stage: "🧪 security-test"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  variables:
+    TRIVY_NO_PROGRESS: "true"
+    TRIVY_IGNOREFILE: "$CI_PROJECT_DIR/.trivyignore"
+    TRIVY_SEVERITY: "CRITICAL,HIGH"
+    TRIVY_IGNORE_UNFIXED: "true"
+  artifacts:
+    when: always
+    expire_in: 30 days
+    paths:
+      - trivy-*.sarif
+      - trivy-*.json
+  allow_failure: true
+
+sca-trivy-fs-frontend-job:
+  extends: .trivy-base
+  script:
+    - trivy fs
+        --scanners vuln,secret,misconfig
+        --format sarif --output trivy-fs-frontend.sarif
+        --exit-code 1
+        frontend
+
+sca-trivy-fs-backend-job:
+  extends: .trivy-base
+  script:
+    - trivy fs
+        --scanners vuln,secret,misconfig
+        --format sarif --output trivy-fs-backend.sarif
+        --exit-code 1
+        backend
+
+sca-trivy-config-chart-job:
+  extends: .trivy-base
+  variables:
+    TRIVY_NO_PROGRESS: "true"
+    TRIVY_IGNOREFILE: "$CI_PROJECT_DIR/.trivyignore"
+    TRIVY_SEVERITY: "CRITICAL,HIGH,MEDIUM"
+  script:
+    - trivy config
+        --format sarif --output trivy-config-chart.sarif
+        --exit-code 1
+        chart

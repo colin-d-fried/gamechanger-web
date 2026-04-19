@@ -1,0 +1,75 @@
+name: Trivy (SCA + IaC + container config)
+
+on:
+  pull_request:
+    branches: [dev, main, master]
+  push:
+    branches: [dev, main, master]
+  schedule:
+    # Weekly rescan of the default branch to catch newly-disclosed CVEs
+    # in otherwise-unchanged dependencies.
+    - cron: "0 7 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write  # for SARIF upload to GitHub Security tab
+
+jobs:
+  trivy:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: "fs-scan-frontend"
+            target: "frontend"
+            scanners: "vuln,secret,misconfig"
+          - name: "fs-scan-backend"
+            target: "backend"
+            scanners: "vuln,secret,misconfig"
+          - name: "config-scan-chart"
+            target: "chart"
+            scanners: "misconfig"
+          - name: "config-scan-dockerfiles"
+            target: "."
+            scanners: "misconfig"
+            # Scope the dockerfile scan down so it doesn't re-scan the whole tree.
+            extra_args: "--skip-dirs frontend --skip-dirs backend --skip-dirs chart --skip-dirs .git --skip-dirs node_modules"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Trivy
+        uses: aquasecurity/trivy-action@0.24.0
+        # Non-blocking during the baseline observation window.
+        continue-on-error: true
+        with:
+          scan-type: ${{ matrix.target == '.' && 'fs' || (matrix.target == 'chart' && 'config' || 'fs') }}
+          scan-ref: ${{ matrix.target }}
+          scanners: ${{ matrix.scanners }}
+          severity: "CRITICAL,HIGH"
+          ignore-unfixed: true
+          exit-code: "1"
+          format: "sarif"
+          output: "trivy-${{ matrix.name }}.sarif"
+          trivyignores: ".trivyignore"
+
+      - name: Upload SARIF to GitHub Security tab
+        # Only upload if the scan produced a file; Trivy writes SARIF even on
+        # no-findings runs, so this should basically always execute.
+        if: always() && hashFiles(format('trivy-{0}.sarif', matrix.name)) != ''
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: "trivy-${{ matrix.name }}.sarif"
+          category: "trivy-${{ matrix.name }}"
+
+      - name: Attach SARIF as workflow artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: "trivy-${{ matrix.name }}"
+          path: "trivy-${{ matrix.name }}.sarif"
+          if-no-files-found: ignore
+          retention-days: 30
